@@ -1,0 +1,56 @@
+function decodingStringFilter()
+
+    [encodedMessage, fs] = audioread('encoded.wav');
+
+    decodedMessage = '';
+    samplesPerChar = 320; 
+
+    % Table of characters and their frequency components
+    C = ['a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o'; 'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z'; ' '];
+    lowFreq = [100; 100; 100; 100; 100; 100; 100; 100; 100; 300; 300; 300; 300; 300; 300; 300; 300; 300; 500; 500; 500; 500; 500; 500; 500; 500; 500];
+    midFreq = [1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500; 1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500; 1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500];
+    highFreq = [2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500];
+    charsTable = table(C, lowFreq, midFreq, highFreq);
+
+    % Decode each character    
+    for i = 1:(length(encodedMessage) / samplesPerChar)
+        % Extract the segment of character
+        segmentStart = (i-1) * samplesPerChar + 1;
+        segmentEnd = i * samplesPerChar;
+        segment = encodedMessage(segmentStart:segmentEnd);
+
+        % Filtering low, med and high frequencies each alone
+        lowPass = bandpass(segment, [80 600], fs);
+        midPass = bandpass(segment, [1000 1600], fs);
+        highPass = bandpass(segment, [2300 3700], fs);
+
+        % Fourier transform for each signal
+        Y_low = abs(fft(lowPass));
+        Y_mid = abs(fft(midPass));
+        Y_high = abs(fft(highPass));
+
+        % Finding the indices for each signal 
+        [~, lowIndex] = max(Y_low);
+        [~, midIndex] = max(Y_mid); 
+        [~, highIndex] = max(Y_high);
+        
+        % Calculate the frequencies for the indices
+        lowFreqVal = lowIndex * fs / length(segment);
+        midFreqVal = midIndex * fs / length(segment);
+        highFreqVal = highIndex * fs / length(segment);
+
+        % Identify the character
+        acceptableRange = 30;
+        for j = 1:27
+            if abs(lowFreq(j) - lowFreqVal) <= acceptableRange && ...
+                    abs(midFreq(j) - midFreqVal) <= acceptableRange && ... 
+                        abs(highFreq(j) - highFreqVal) <= acceptableRange
+                decodedMessage = [decodedMessage, charsTable.C(j)];
+                break;
+            end
+        end
+    end
+    disp(newline);
+    disp('Decoded message from filter:');
+    disp(decodedMessage);
+end

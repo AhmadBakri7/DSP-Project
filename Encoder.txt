@@ -1,0 +1,43 @@
+function main()
+        
+    % type the message
+    message = 'facts are always true';
+
+    % Encode the message
+    encodedMessage = encoder(message);
+    
+    % Save the signal to a file
+    if max(abs(encodedMessage)) > 1.0
+        encodedMessage = encodedMessage / max(abs(encodedMessage));
+    end
+    audiowrite('encoded.wav', encodedMessage, 8000);
+
+    % Call the decoders
+    decodingStringFreq();
+    decodingStringFilter();
+
+end
+
+function [encodedMessage] = encoder(a)
+    fs = 8000;
+    n = 0:320;
+    char = 0;
+    encodedMessage = zeros(1,length(a)); 
+    
+    % Create the table of chars and their frequency components
+    C = ['a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o'; 'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z'; ' '];
+    lowFreq = [100; 100; 100; 100; 100; 100; 100; 100; 100; 300; 300; 300; 300; 300; 300; 300; 300; 300; 500; 500; 500; 500; 500; 500; 500; 500; 500];
+    midFreq = [1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500; 1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500; 1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500];
+    highFreq = [2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500];
+    charsTable = table(C, lowFreq, midFreq, highFreq);
+        
+    for i = 1:length(a)
+        for j = 1:27
+            if isequal(a(i), charsTable.C(j))
+                char = cos(2*pi*charsTable.lowFreq(j)*n/fs) + cos(2*pi*charsTable.midFreq(j)*n/fs) + cos(2*pi*charsTable.highFreq(j)*n/fs);
+                encodedMessage = [encodedMessage char];
+                break;
+            end 
+         end 
+    end
+end

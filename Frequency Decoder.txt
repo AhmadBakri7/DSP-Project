@@ -1,0 +1,44 @@
+function decodingStringFreq()
+
+    [encodedMessage, fs] = audioread('encoded.wav');
+    
+    decodedMessage = '';
+    samplesPerChar = 320;
+    
+    % Create the table of chars and their frequency components
+    C = ['a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'; 'j'; 'k'; 'l'; 'm'; 'n'; 'o'; 'p'; 'q'; 'r'; 's'; 't'; 'u'; 'v'; 'w'; 'x'; 'y'; 'z'; ' '];
+    lowFreq = [100; 100; 100; 100; 100; 100; 100; 100; 100; 300; 300; 300; 300; 300; 300; 300; 300; 300; 500; 500; 500; 500; 500; 500; 500; 500; 500];
+    midFreq = [1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500; 1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500; 1100; 1100; 1100; 1300; 1300; 1300; 1500; 1500; 1500];
+    highFreq = [2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500; 2500; 3000; 3500];
+    charsTable = table(C, lowFreq, midFreq, highFreq);
+
+    % Decode each character
+    for i = 1:floor(length(encodedMessage) / samplesPerChar)
+        % Extract the segment of character
+        segmentStart = (i-1) * samplesPerChar + 1;
+        segmentEnd = i * samplesPerChar;
+        segment = encodedMessage(segmentStart:segmentEnd);
+
+        % Fourier transform of the segment
+        Y_segment = fft(segment);
+        Y_segment = abs(Y_segment(1:floor(length(Y_segment)/2)));
+         
+        % Find the 3 highest peaks in the segment
+        [~, index] = findpeaks(Y_segment, 'SortStr', 'descend', 'NPeaks', 3);
+
+        % Frequency values of the three highest peaks
+        peakFreqs = (index-1) * (fs / length(segment));
+
+        % Identify the character
+        for j = 1:27
+            tableFreqs = [charsTable.lowFreq(j), charsTable.midFreq(j), charsTable.highFreq(j)];
+            if all(ismember(round(tableFreqs), round(peakFreqs)))
+                decodedMessage = [decodedMessage, charsTable.C(j)];
+                break;
+            end
+        end
+    end   
+    disp(newline);
+    disp('Decoded message from frequency analysis:');
+    disp(decodedMessage);
+end
