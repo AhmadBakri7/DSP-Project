@@ -1,0 +1,1 @@
+This project encodes English text into unique voice-band frequency signals and decodes them back into text. It consists of two phases: encoding, where characters are represented by low, middle, and high frequencies; and decoding, which uses Fourier transform and bandpass filters aligned with encoding frequencies.
